@@ -13,6 +13,15 @@ import { BuildInput } from './buildInput';
 import config from '../config';
 import TelemetryReporter from '../telemetryReporter';
 
+import {
+    LanguageClient,
+    LanguageClientOptions,
+    ServerOptions,
+    TransportKind,
+} from "vscode-languageclient";
+import { Trace } from "vscode-jsonrpc";
+import { workspace } from 'vscode';
+
 export class BuildExecutor {
     private _cwd: string;
     private _binary: string;
@@ -56,6 +65,58 @@ export class BuildExecutor {
         buildResult.result = await this.build(input.localRepositoryPath, input.outputFolderPath, input.logPath, input.dryRun, envs, stdinInput);
         buildResult.buildTimeInSeconds = getDurationInSeconds(Date.now() - buildStart);
         return buildResult;
+    }
+
+    public startDocfxLanguageServer(input: BuildInput, buildUserToken: string): LanguageClient {
+        let [envs, stdinInput] = this.getBuildParameters(undefined, input, buildUserToken);
+        let options = { env: envs, cwd: this._cwd };
+        let optionsWithFullEnvironment = {
+            ...options,
+            env: {
+                ...process.env,
+                ...options.env
+            }
+        };
+
+        let serverExe = "dotnet";
+        let serverOptions: ServerOptions = {
+            // run: { command: serverExe, args: ['-lsp', '-d'] },
+            run: {
+                command: serverExe,
+                args: ["E:/docfx/src/docfx/bin/Debug/netcoreapp3.1/docfx.dll", "serve", input.localRepositoryPath, "--legacy", "--log", input.logPath, "--http", stdinInput],
+                options: optionsWithFullEnvironment,
+                transport: TransportKind.ipc,
+            },
+            // debug: { command: serverExe, args: ['-lsp', '-d'] }
+            debug: {
+                command: serverExe,
+                args: ["E:/docfx/src/docfx/bin/Debug/netcoreapp3.1/docfx.dll", "serve", input.localRepositoryPath, "--legacy", "--log", input.logPath, "--http", stdinInput],
+                options: optionsWithFullEnvironment,
+                transport: TransportKind.ipc,
+                runtime: "",
+            },
+        };
+
+        let clientOptions: LanguageClientOptions = {
+            // Register the server for plain text documents
+            documentSelector: [
+                {
+                    pattern: "**/*.md",
+                }
+            ],
+            progressOnInitialization: true,
+            synchronize: {
+                // Synchronize the setting section 'languageServerExample' to the server
+                configurationSection: "docfxLanguageServer",
+                fileEvents: workspace.createFileSystemWatcher("**/*.cs"),
+            },
+        };
+
+        // Create the language client and start the client.
+        const client = new LanguageClient("docfxLanguageServer", "Docfx Language Server", serverOptions, clientOptions);
+        client.registerProposedFeatures();
+        client.trace = Trace.Verbose;
+        return client;
     }
 
     public async cancelBuild() {

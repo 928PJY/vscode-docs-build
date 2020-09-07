@@ -7,7 +7,7 @@ import { EventStream } from '../common/eventStream';
 import { DiagnosticController } from './diagnosticController';
 import { safelyReadJsonFile, getRepositoryInfoFromLocalFolder, getDurationInSeconds, normalizeDriveLetter, getTempOutputFolder } from '../utils/utils';
 import { BuildExecutor } from './buildExecutor';
-import { OP_CONFIG_FILE_NAME } from '../shared';
+import { OP_CONFIG_FILE_NAME, CUSTOM_PREVIEW_REQUEST } from '../shared';
 import { visualizeBuildReport } from './reportGenerator';
 import { BuildInstantAllocated, BuildInstantReleased, BuildProgress, RepositoryInfoRetrieved, BuildTriggered, BuildFailed, BuildStarted, BuildSucceeded, BuildCanceled, CancelBuildTriggered, CancelBuildSucceeded, CancelBuildFailed, CredentialExpired } from '../common/loggingEvents';
 import { DocsError } from '../error/docsError';
@@ -15,11 +15,16 @@ import { ErrorCode } from '../error/errorCode';
 import { BuildInput, BuildType } from './buildInput';
 import { DocfxExecutionResult } from './buildResult';
 import { EnvironmentController } from '../common/environmentController';
+import { Disposable, LanguageClient } from 'vscode-languageclient';
+import { PreviewRequest, PreviewParams, PreviewResponse } from './languageServerModels';
 
-export class BuildController {
+export class BuildController implements Disposable {
     private _currentBuildCorrelationId: string;
     private _instanceAvailable: boolean;
     private _buildInput: BuildInput;
+    private _dispose: Disposable;
+
+    private _client: LanguageClient;
 
     constructor(
         private _buildExecutor: BuildExecutor,
@@ -33,6 +38,10 @@ export class BuildController {
 
     public get instanceAvailable(): boolean {
         return this._instanceAvailable;
+    }
+
+    dispose() {
+        this._dispose.dispose();
     }
 
     public async build(correlationId: string, credential: Credential): Promise<void> {
@@ -80,6 +89,32 @@ export class BuildController {
         function getTotalTimeInSeconds() {
             return getDurationInSeconds(Date.now() - start);
         }
+    }
+
+    public async startDocfxLanguageServer(credential: Credential): Promise<void> {
+        let buildInput: BuildInput;
+
+        // await this.validateUserCredential(credential);
+        buildInput = await this.getBuildInput(credential);
+        this._client = this._buildExecutor.startDocfxLanguageServer(buildInput, credential.userInfo.userToken);
+        this._dispose = this._client.start();
+
+        // this._client.onReady().then(async () => {
+        //     await this._client.sendRequest(PreviewRequest.type, <PreviewParams>{ Content: "as" }, undefined).then((response: PreviewResponse) => {
+        //         let resource = vscode.window.activeTextEditor.document.uri;
+
+        //         const resourceColumn = (vscode.window.activeTextEditor && vscode.window.activeTextEditor.viewColumn) || vscode.ViewColumn.One;
+        //         const previewColumn = resourceColumn + 1;
+
+        //         this._preview = this.createNewDynamicPreview(resource, settings);
+
+        //         preview.update(resource);
+        //     });
+
+        //     // client.onRequest(CUSTOM_PREVIEW_REQUEST, (resource: string) => {
+        //     //     return schemaExtensionAPI.requestCustomSchema(resource);
+        //     // });
+        // })
     }
 
     public cancelBuild(): void {

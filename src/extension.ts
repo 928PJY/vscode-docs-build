@@ -87,10 +87,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         signStatusBar,
         buildStatusBar,
         environmentController,
+        buildController,
         vscode.commands.registerCommand('docs.signIn', () => credentialController.signIn(getCorrelationId())),
         vscode.commands.registerCommand('docs.signOut', () => credentialController.signOut(getCorrelationId())),
         vscode.commands.registerCommand('docs.build', () => {
             buildController.build(getCorrelationId(), credentialController.credential);
+        }),
+        vscode.commands.registerCommand('docs.serve', () => {
+            buildController.startDocfxLanguageServer(credentialController.credential);
         }),
         vscode.commands.registerCommand('docs.cancelBuild', () => buildController.cancelBuild()),
         vscode.commands.registerCommand('learnMore', (diagnosticErrorCode: string) => {
@@ -140,6 +144,12 @@ function createQuickPickMenu(correlationId: string, eventStream: EventStream, cr
                 description: 'Sign out from Docs',
                 picked: true
             });
+        pickItems.push(
+            {
+                label: 'Serve',
+                description: 'Start docfx serve',
+                picked: true
+            });
         if (buildController.instanceAvailable) {
             pickItems.push(
                 {
@@ -170,6 +180,9 @@ function createQuickPickMenu(correlationId: string, eventStream: EventStream, cr
                     break;
                 case 'Cancel Build':
                     buildController.cancelBuild();
+                    break;
+                case 'Serve':
+                    vscode.commands.executeCommand("docs.serve");
                     break;
             }
             quickPickMenu.hide();
