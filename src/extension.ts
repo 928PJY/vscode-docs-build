@@ -51,7 +51,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
     // Message 
     let errorMessageObserver = new ErrorMessageObserver();
-    let infoMessageObserver = new InfoMessageObserver();
+    let infoMessageObserver = new InfoMessageObserver(environmentController);
     eventStream.subscribe(errorMessageObserver.eventHandler);
     eventStream.subscribe(infoMessageObserver.eventHandler);
 
@@ -119,9 +119,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 function getTelemetryReporter(context: ExtensionContext, environmentController: EnvironmentController): TelemetryReporter {
     let key = config.AIKey[environmentController.env];
     let telemetryReporter = new TelemetryReporter(EXTENSION_ID, context.extensionVersion, key);
-    telemetryReporter.setCommonProperty({
-        'common.docsUserId': undefined
-    });
     return telemetryReporter;
 }
 

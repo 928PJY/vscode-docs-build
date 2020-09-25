@@ -17,6 +17,7 @@ export function getFakeEnvironmentController(docsRepoType: DocsRepoType = 'GitHu
         env: 'PROD',
         docsRepoType: docsRepoType || 'GitHub',
         debugMode: false,
+        enableSignRecommendHint: true,
     };
 }
 
@@ -84,6 +85,7 @@ export const fakedCredential = <Credential>{
 export const tempFolder = path.resolve(__dirname, '../../../.temp');
 export const defaultOutputPath = path.resolve(tempFolder, 'output');
 export const defaultLogPath = path.resolve(defaultOutputPath, '.errors.log');
+export const publicTemplateURL = "https://static.docs.com/ui/latest";
 
 export const fakedExtensionContext = <ExtensionContext>{
     packageJson: {
@@ -118,10 +120,13 @@ export const fakedBuildInput = <BuildInput>{
     logPath: defaultLogPath
 };
 
-export function getFakedBuildExecutor(docfxExecutionResult: DocfxExecutionResult): BuildExecutor {
+export function getFakedBuildExecutor(docfxExecutionResult: DocfxExecutionResult, setRunBuildFuncParameters?: Function): BuildExecutor {
     let buildCancelled = false;
     return <any>{
         RunBuild: (correlationId: string, input: BuildInput, buildUserToken: string): Promise<BuildResult> => {
+            if (setRunBuildFuncParameters) {
+                setRunBuildFuncParameters(correlationId, input, buildUserToken);
+            }
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
                     if (buildCancelled) {

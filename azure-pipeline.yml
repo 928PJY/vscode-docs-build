@@ -9,8 +9,11 @@ pr:
 - master
 
 variables:
-  npm_config_cache: $(Pipeline.Workspace)/.npm
-  runCodesignValidationInjection: false
+- group: Docs Authoring Pack KV
+- name: npm_config_cache
+  value: $(Pipeline.Workspace)/.npm
+- name: runCodesignValidationInjection
+  value: false
 
 strategy:
   matrix:
@@ -38,7 +41,6 @@ steps:
     path: $(npm_config_cache)
   displayName: Cache npm
 
-
 - task: Npm@1
   displayName: 'npm install'
   inputs:
@@ -53,16 +55,34 @@ steps:
   condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
 
 - bash: |
-    VSCODE_DOCS_BUILD_EXTENSION_GITHUB_TOKEN=$(VSCODE_DOCS_BUILD_EXTENSION_GITHUB_TOKEN) VSCODE_DOCS_BUILD_EXTENSION_BUILD_USER_TOKEN=$(VSCODE_DOCS_BUILD_EXTENSION_BUILD_USER_TOKEN) npm run test
+    npm run test
   displayName: Run Test(Mac)
   condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
+  env:
+    VSCODE_DOCS_BUILD_EXTENSION_GITHUB_TOKEN: $(githubToken)
+    VSCODE_DOCS_BUILD_EXTENSION_BUILD_USER_TOKEN: $(opBuildUserToken)
 
 - powershell: |
-    $env:VSCODE_DOCS_BUILD_EXTENSION_GITHUB_TOKEN="$(VSCODE_DOCS_BUILD_EXTENSION_GITHUB_TOKEN)"
-    $env:VSCODE_DOCS_BUILD_EXTENSION_BUILD_USER_TOKEN="$(VSCODE_DOCS_BUILD_EXTENSION_BUILD_USER_TOKEN)"
     npm run test
   displayName: Run Test(Windows)
   condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+  env:
+    VSCODE_DOCS_BUILD_EXTENSION_GITHUB_TOKEN: $(githubToken)
+    VSCODE_DOCS_BUILD_EXTENSION_BUILD_USER_TOKEN: $(opBuildUserToken)
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: output'
+  inputs:
+    PathtoPublish: '.temp/debug'
+    ArtifactName: Output-Mac
+  condition: and(failed(), eq(variables['Agent.OS'], 'Darwin'))
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: output'
+  inputs:
+    PathtoPublish: '.temp/debug'
+    ArtifactName: Output-Windows
+  condition: and(failed(), eq(variables['Agent.OS'], 'Windows_NT'))
 
 - bash: ./node_modules/.bin/codecov -f coverage/unit/lcov.info -F unit
   displayName: 'Report unit test coverage'
@@ -71,6 +91,6 @@ steps:
     CODECOV_TOKEN: $(CODECOV_TOKEN)
 
 - bash: |
-    npm run publish -- -p $(VSCODE_MARKETPLACE_TOKEN)
+    npm run publish -- -p $(Docs-Authoring-Pack-Publish-Token)
   displayName: 'Publish'
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), startsWith(variables['Build.SourceBranch'], 'refs/tags/'), eq(variables['Agent.OS'], 'Windows_NT'))
