@@ -62,6 +62,21 @@
           "type": "boolean",
           "default": true,
           "description": "Show hint message to recommend Microsoft employee to sign in"
+        },
+        "docfxLanguageServer.maxNumberOfProblems": {
+          "type": "number",
+          "default": 100,
+          "description": "Controls the maximum number of problems produced by the server."
+        },
+        "docfxLanguageServer.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "verbose",
+          "description": "Traces the communication between VSCode and the languageServerExample service."
         }
       }
     },
@@ -79,6 +94,16 @@
       {
         "command": "docs.build",
         "title": "Validate this workspace folder",
+        "category": "Docs"
+      },
+      {
+        "command": "docs.serve",
+        "title": "Start docfx language server",
+        "category": "Docs"
+      },
+      {
+        "command": "docs.preview",
+        "title": "Start Preview",
         "category": "Docs"
       },
       {
@@ -191,7 +216,8 @@
     "temp-dir": "^2.0.0",
     "uuid": "^3.4.0",
     "vscode-languageclient": "^6.1.3",
-    "yauzl": "^2.10.0"
+    "yauzl": "^2.10.0",
+    "vscode-languageserver-protocol": "^3.16.0-next.6"
   },
   "runtimeDependencies": [
     {

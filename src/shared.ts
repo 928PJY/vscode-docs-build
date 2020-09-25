@@ -58,3 +58,6 @@ export interface ReportItem {
     buildDuration: number;
     isInitialRun: boolean;
 }
+
+// language service
+export const CUSTOM_PREVIEW_REQUEST = 'docfx/preview';

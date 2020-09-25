@@ -96,6 +96,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         vscode.commands.registerCommand('docs.serve', () => {
             buildController.startDocfxLanguageServer(credentialController.credential);
         }),
+        vscode.commands.registerCommand('docs.preview', () => {
+            buildController.startPreview();
+        }),
         vscode.commands.registerCommand('docs.cancelBuild', () => buildController.cancelBuild()),
         vscode.commands.registerCommand('learnMore', (diagnosticErrorCode: string) => {
             CodeActionProvider.learnMoreAboutCode(eventStream, getCorrelationId(), diagnosticErrorCode);
@@ -147,6 +150,12 @@ function createQuickPickMenu(correlationId: string, eventStream: EventStream, cr
                 description: 'Start docfx serve',
                 picked: true
             });
+        pickItems.push(
+            {
+                label: 'Preview',
+                description: 'Start preview',
+                picked: true
+            });
         if (buildController.instanceAvailable) {
             pickItems.push(
                 {
@@ -180,6 +189,9 @@ function createQuickPickMenu(correlationId: string, eventStream: EventStream, cr
                     break;
                 case 'Serve':
                     vscode.commands.executeCommand("docs.serve");
+                    break;
+                case 'Preview':
+                    vscode.commands.executeCommand("docs.preview");
                     break;
             }
             quickPickMenu.hide();
