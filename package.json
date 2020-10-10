@@ -76,7 +76,8 @@
             "verbose"
           ],
           "default": "verbose",
-          "description": "Traces the communication between VSCode and the languageServerExample service."
+          "description": "Traces the communication between VSCode and the languageServerExample service.",
+          "format": "json"
         }
       }
     },

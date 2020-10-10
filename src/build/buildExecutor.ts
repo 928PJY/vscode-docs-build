@@ -108,7 +108,7 @@ export class BuildExecutor {
             // Register the server for plain text documents
             documentSelector: [
                 {
-                    pattern: "**/*.md",
+                    pattern: "**/*.{md,yml}",
                 }
             ],
             progressOnInitialization: true,

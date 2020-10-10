@@ -1,4 +1,4 @@
-import vscode from 'vscode';
+import vscode, { ViewColumn, WebviewPanel, window } from 'vscode';
 import fs from 'fs-extra';
 import path from 'path';
 import { Credential } from '../credential/credentialController';
@@ -17,6 +17,7 @@ import { DocfxExecutionResult } from './buildResult';
 import { EnvironmentController } from '../common/environmentController';
 import { Disposable, LanguageClient } from 'vscode-languageclient';
 import { PreviewRequest, PreviewParams, PreviewResponse, PreviewUpdateNotification, PreviewUpdateResponse } from './languageServerModels';
+import { DocumentContentProvider } from './previewContentProvider';
 
 export class BuildController implements Disposable {
     private _currentBuildCorrelationId: string;
@@ -25,6 +26,8 @@ export class BuildController implements Disposable {
     private _dispose: Disposable;
 
     private _client: LanguageClient;
+    private _panel: WebviewPanel;
+    private _previewProvider: DocumentContentProvider;
 
     constructor(
         private _buildExecutor: BuildExecutor,
@@ -34,6 +37,7 @@ export class BuildController implements Disposable {
         private _eventStream: EventStream,
     ) {
         this._instanceAvailable = true;
+        this._previewProvider = new DocumentContentProvider();
     }
 
     public get instanceAvailable(): boolean {
@@ -109,10 +113,15 @@ export class BuildController implements Disposable {
     public async startDocfxLanguageServer(credential: Credential): Promise<void> {
         let buildInput: BuildInput;
 
-        // await this.validateUserCredential(credential);
-        buildInput = await this.getBuildInput(credential);
-        this._client = this._buildExecutor.startDocfxLanguageServer(buildInput, credential.userInfo.userToken);
-        this._dispose = this._client.start();
+        try {
+            await this.validateUserCredential(credential);
+            buildInput = await this.getBuildInput(credential);
+            this._client = this._buildExecutor.startDocfxLanguageServer(buildInput, credential.userInfo.userToken);
+            this._dispose = this._client.start();
+        } catch (err) {
+            this._eventStream.post(new BuildFailed(undefined, buildInput, undefined, err));
+            return;
+        }
     }
 
     public startPreview() {
@@ -122,27 +131,46 @@ export class BuildController implements Disposable {
 
         this._client.onReady().then(async () => {
             let activeTextEditor = vscode.window.activeTextEditor;
+            if (activeTextEditor.document.uri.scheme !== "file") {
+                vscode.window.showErrorMessage("Please make sure the target file editor are focused.");
+                return;
+            }
             this._client
                 .sendRequest(PreviewRequest.type, <PreviewParams>{
                     uri: activeTextEditor.document.uri.toString(),
                     text: activeTextEditor.document.getText()
                 })
-                .then((response: PreviewResponse) => {
-                    console.log(`Received response ${response.content}`);
-                    // let resource = vscode.window.activeTextEditor.document.uri;
+                .then(async (response: PreviewResponse) => {
+                    // console.log(`Received response ${response.content}`);
 
-                    // const resourceColumn = (vscode.window.activeTextEditor && vscode.window.activeTextEditor.viewColumn) || vscode.ViewColumn.One;
-                    // const previewColumn = resourceColumn + 1;
+                    this._panel = window.createWebviewPanel(
+                        DocumentContentProvider.scheme,
+                        'Search Results Preview',
+                        { preserveFocus: true, viewColumn: ViewColumn.Two },
+                        { enableScripts: true }
+                    );
+                    this._panel.onDidDispose(() => {
+                        this._panel = undefined;
+                    });
 
-                    // this._preview = this.createNewDynamicPreview(resource, settings);
-
-                    // preview.update(resource);
+                    this._previewProvider.header = response.header;
+                    this._previewProvider.content = response.content;
+                    this.updatePreviewPanel();
                 });
 
-            this._client.onNotification(PreviewUpdateNotification.type, (res: PreviewUpdateResponse) => {
-                console.log(`Received preview update: ${res.content}`);
+            this._client.onNotification(PreviewUpdateNotification.type, async (res: PreviewUpdateResponse) => {
+                // console.log(`Received preview update: ${res.content}`);
+                this._previewProvider.header = res.header;
+                this._previewProvider.content = res.content;
+                this.updatePreviewPanel();
             });
         });
+    }
+
+    private async updatePreviewPanel() {
+        if (this._panel) {
+            this._panel.webview.html = await this._previewProvider.provideTextDocumentContent();
+        }
     }
 
     private setAvailableFlag() {
@@ -158,9 +186,13 @@ export class BuildController implements Disposable {
         this._eventStream.post(new BuildInstantReleased());
     }
 
-    private async validateUserCredential(credential: Credential) {
+    private async validateUserCredential(credential: Credential, allowAnonymous: boolean = true) {
         if (credential.signInStatus !== 'SignedIn') {
-            return;
+            if (!allowAnonymous) {
+                throw new DocsError(`Please sign in first.`, ErrorCode.TriggerBuildBeforeSignedIn);
+            } else {
+                return;
+            }
         }
 
         if (!(await this._opBuildAPIClient.validateCredential(credential.userInfo.userToken, this._eventStream))) {

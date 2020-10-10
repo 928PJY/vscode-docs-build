@@ -14,9 +14,11 @@ export interface PreviewParams {
 }
 
 export interface PreviewResponse {
+    header: string;
     content: string;
 }
 
 export interface PreviewUpdateResponse {
+    header: string;
     content: string;
 }
