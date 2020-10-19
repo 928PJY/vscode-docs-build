@@ -85,19 +85,20 @@ export class BuildExecutor {
             }
         };
 
-        let serverExe = "dotnet";
+        let serverExe = this._binary;
         let serverOptions: ServerOptions = {
             // run: { command: serverExe, args: ['-lsp', '-d'] },
             run: {
                 command: serverExe,
-                args: ["E:/docfx/src/docfx/bin/Debug/netcoreapp3.1/docfx.dll", "serve", input.localRepositoryPath, "--legacy", "--log", input.logPath, "--http", buildParameters.stdin],
+                args: ["serve", input.localRepositoryPath, "--legacy", "--log", input.logPath, "--http", buildParameters.stdin],
                 options: optionsWithFullEnvironment,
+
                 transport: TransportKind.ipc,
             },
             // debug: { command: serverExe, args: ['-lsp', '-d'] }
             debug: {
                 command: serverExe,
-                args: ["E:/docfx/src/docfx/bin/Debug/netcoreapp3.1/docfx.dll", "serve", input.localRepositoryPath, "--legacy", "--log", input.logPath, "--http", buildParameters.stdin],
+                args: ["serve", input.localRepositoryPath, "--legacy", "--log", input.logPath, "--http", buildParameters.stdin],
                 options: optionsWithFullEnvironment,
                 transport: TransportKind.ipc,
                 runtime: "",
