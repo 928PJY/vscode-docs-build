@@ -1,7 +1,7 @@
 {
   "name": "docs-build",
   "displayName": "docs-validation",
-  "description": "Docs Validation Extension",
+  "description": "Docs Validation Extension which enables you to run build validation on a Docs conceptual or Learn repo at authoring time in VS Code",
   "version": "0.2.0",
   "engines": {
     "vscode": "^1.40.0"
@@ -37,7 +37,6 @@
     "email": "jipe@microsoft.com",
     "name": "Jiayin Pei"
   },
-  "preview": true,
   "publisher": "docsmsft",
   "main": "./out/src/extension",
   "contributes": {
@@ -84,7 +83,7 @@
     "commands": [
       {
         "command": "docs.signIn",
-        "title": "Sign in to Docs",
+        "title": "Sign in to Docs (!This is only available for Microsoft internal user)",
         "category": "Docs"
       },
       {
@@ -94,7 +93,7 @@
       },
       {
         "command": "docs.build",
-        "title": "Validate this workspace folder",
+        "title": "Validate this repository",
         "category": "Docs"
       },
       {
