@@ -95,13 +95,13 @@ export class BuildExecutor {
                 args: args,
                 options: optionsWithFullEnvironment,
 
-                transport: TransportKind.ipc,
+                transport: TransportKind.stdio,
             },
             debug: {
                 command: this._binary,
                 args: args,
                 options: optionsWithFullEnvironment,
-                transport: TransportKind.ipc,
+                transport: TransportKind.stdio,
                 runtime: "",
             },
         };

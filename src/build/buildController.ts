@@ -110,13 +110,14 @@ export class BuildController implements Disposable {
         }
     }
 
-    public async startDocfxLanguageServer(credential: Credential): Promise<void> {
+    public async startDocfxLanguageServer(): Promise<void> {
         let buildInput: BuildInput;
 
         try {
-            await this.validateUserCredential(credential);
-            buildInput = await this.getBuildInput(credential);
-            this._client = this._buildExecutor.startDocfxLanguageServer(buildInput, credential.userInfo.userToken);
+            // await this.validateUserCredential(credential, true);
+            buildInput = await this.getBuildInput(undefined);
+            // this._client = this._buildExecutor.startDocfxLanguageServer(buildInput, credential.userInfo.userToken);
+            this._client = this._buildExecutor.startDocfxLanguageServer(buildInput, undefined);
             this._dispose = this._client.start();
         } catch (err) {
             this._eventStream.post(new BuildFailed(undefined, buildInput, undefined, err));
@@ -216,7 +217,7 @@ export class BuildController implements Disposable {
         let localRepositoryPath = activeWorkSpaceFolder.uri.fsPath;
 
         try {
-            let [localRepositoryUrl, originalRepositoryUrl] = await this.retrieveRepositoryInfo(localRepositoryPath, credential.userInfo?.userToken);
+            let [localRepositoryUrl, originalRepositoryUrl] = await this.retrieveRepositoryInfo(localRepositoryPath, credential?.userInfo?.userToken);
             let dryRun = this.needDryRun(activeWorkSpaceFolder.uri.fsPath);
 
             this._buildInput = <BuildInput>{

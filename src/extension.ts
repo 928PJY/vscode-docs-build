@@ -94,7 +94,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
             buildController.build(getCorrelationId(), credentialController.credential);
         }),
         vscode.commands.registerCommand('docs.serve', () => {
-            buildController.startDocfxLanguageServer(credentialController.credential);
+            buildController.startDocfxLanguageServer();
         }),
         vscode.commands.registerCommand('docs.preview', () => {
             buildController.startPreview();
@@ -110,9 +110,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         vscode.window.registerUriHandler(uriHandler)
     );
 
+    let startLsp = credentialInitialPromise.then(() => {
+        buildController.startDocfxLanguageServer();
+    });
+
     return {
         initializationFinished: async () => {
             await credentialInitialPromise;
+            await startLsp;
         },
         eventStream,
         keyChain
@@ -137,12 +142,12 @@ function createQuickPickMenu(correlationId: string, eventStream: EventStream, cr
                 label: '$(debug-start) Validate',
                 description: 'Trigger a validation on current repository'
             });
-        pickItems.push(
-            {
-                label: '$(server) Serve',
-                description: 'Start docfx language server',
-                // picked: true
-            });
+        // pickItems.push(
+        //     {
+        //         label: '$(server) Serve',
+        //         description: 'Start docfx language server',
+        //         // picked: true
+        //     });
         // pickItems.push(
         //     {
         //         label: 'Preview',

@@ -12,7 +12,7 @@
             "runtimeExecutable": "${execPath}",
             "sourceMaps": true,
             "args": [
-                // "--disable-extensions",
+                "--disable-extensions",
                 "--extensionDevelopmentPath=${workspaceFolder}"
             ],
             "outFiles": [
@@ -89,7 +89,7 @@
                 "updateRuntimeDependencies"
             ],
             "env": {
-                "DOCFX_VERSION": "3.0.0-beta1.266+590dec0afd"
+                "DOCFX_VERSION": "3.0.0-beta1.494+61ac105888"
             },
             "cwd": "${workspaceFolder}"
         }
