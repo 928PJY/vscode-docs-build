@@ -2,7 +2,7 @@ import extensionConfig from '../config';
 import { PlatformInformation } from '../common/platformInformation';
 import { ChildProcess } from 'child_process';
 import { Package, AbsolutePathPackage } from '../dependency/package';
-import { DocfxBuildStarted, DocfxRestoreStarted, DocfxBuildCompleted, DocfxRestoreCompleted } from '../common/loggingEvents';
+import { DocfxBuildStarted, DocfxRestoreStarted, DocfxBuildCompleted, DocfxRestoreCompleted, BuildProgress } from '../common/loggingEvents';
 import { EnvironmentController } from '../common/environmentController';
 import { EventStream } from '../common/eventStream';
 import { executeDocfx } from '../utils/childProcessUtils';
@@ -25,6 +25,7 @@ import { workspace } from 'vscode';
 interface BuildParameters {
     restoreCommand: string;
     buildCommand: string;
+    serveCommand: string;
     envs: any;
     stdin: string;
 }
@@ -45,7 +46,8 @@ export class BuildExecutor {
         let runtimeDependencies = <Package[]>context.packageJson.runtimeDependencies;
         let buildPackage = runtimeDependencies.find((pkg: Package) => pkg.name === 'docfx' && pkg.rid === this._platformInfo.rid);
         let absolutePackage = AbsolutePathPackage.getAbsolutePathPackage(buildPackage, context.extensionPath);
-        this._cwd = absolutePackage.installPath.value;
+        // this._cwd = absolutePackage.installPath.value;
+        this._cwd = "E:/docfx/src/docfx/bin/Debug/netcoreapp3.1";
         this._binary = absolutePackage.binary;
     }
 
@@ -85,20 +87,19 @@ export class BuildExecutor {
             }
         };
 
-        let serverExe = this._binary;
+        this._eventStream.post(new BuildProgress(`& ${buildParameters.serveCommand}`));
+        let args = [...buildParameters.serveCommand.split(' ').map(x => x.replace(/^\"+|\"+$/g, '')), "--http", buildParameters.stdin].slice(1);
         let serverOptions: ServerOptions = {
-            // run: { command: serverExe, args: ['-lsp', '-d'] },
             run: {
-                command: serverExe,
-                args: ["serve", input.localRepositoryPath, "--legacy", "--log", input.logPath, "--http", buildParameters.stdin],
+                command: this._binary,
+                args: args,
                 options: optionsWithFullEnvironment,
 
                 transport: TransportKind.ipc,
             },
-            // debug: { command: serverExe, args: ['-lsp', '-d'] }
             debug: {
-                command: serverExe,
-                args: ["serve", input.localRepositoryPath, "--legacy", "--log", input.logPath, "--http", buildParameters.stdin],
+                command: this._binary,
+                args: args,
                 options: optionsWithFullEnvironment,
                 transport: TransportKind.ipc,
                 runtime: "",
@@ -106,7 +107,6 @@ export class BuildExecutor {
         };
 
         let clientOptions: LanguageClientOptions = {
-            // Register the server for plain text documents
             documentSelector: [
                 {
                     pattern: "**/*.{md,yml}",
@@ -234,7 +234,8 @@ export class BuildExecutor {
             envs,
             stdin,
             restoreCommand: this.getExecCommand("restore", input, isPublicUser),
-            buildCommand: this.getExecCommand("build", input, isPublicUser)
+            buildCommand: this.getExecCommand("build", input, isPublicUser),
+            serveCommand: this.getExecCommand('serve', input, isPublicUser),
         };
     }
 
@@ -243,11 +244,26 @@ export class BuildExecutor {
         input: BuildInput,
         isPublicUser: boolean,
     ): string {
-        let cmdWithParameters = `${this._binary} ${command} "${input.localRepositoryPath}" --log "${input.logPath}" --stdin`;
-        cmdWithParameters += (isPublicUser ? ` --template "${config.PublicTemplate}"` : '');
-        cmdWithParameters += (this._environmentController.debugMode ? ' --verbose' : '');
-        cmdWithParameters += (command === "build" && input.dryRun ? ' --dry-run' : '');
-        cmdWithParameters += (command === "build" ? ` --output "${input.outputFolderPath}"` : '');
+        let cmdWithParameters = `${this._binary} ${command} "${input.localRepositoryPath}" --log "${input.logPath}"`;
+
+        if (command !== 'serve') {
+            cmdWithParameters += ` --stdin`;
+        }
+
+        if (isPublicUser) {
+            cmdWithParameters += ` --template "${config.PublicTemplate}"`;
+        }
+
+        if (this._environmentController.debugMode) {
+            cmdWithParameters += ' --verbose';
+        }
+
+        if (command !== "restore") {
+            if (input.dryRun) {
+                cmdWithParameters += ' --dry-run';
+            }
+            cmdWithParameters += ` --output "${input.outputFolderPath}" --output-type "pagejson"`;
+        }
         return cmdWithParameters;
     }
 }

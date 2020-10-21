@@ -56,8 +56,8 @@ export class BuildController implements Disposable {
         try {
             await this.validateUserCredential(credential);
             buildInput = await this.getBuildInput(credential);
-            fs.emptyDirSync(this._buildInput.outputFolderPath);
-            fs.removeSync(this._buildInput.logPath);
+            fs.emptyDirSync(buildInput.outputFolderPath);
+            fs.removeSync(buildInput.logPath);
             this.setAvailableFlag();
         } catch (err) {
             this._eventStream.post(new BuildFailed(correlationId, buildInput, getTotalTimeInSeconds(), err));
@@ -88,7 +88,7 @@ export class BuildController implements Disposable {
             this._currentBuildCorrelationId = undefined;
             if (!this._environmentController.debugMode) {
                 fs.remove(buildInput.outputFolderPath);
-                fs.removeSync(this._buildInput.logPath);
+                fs.removeSync(buildInput.logPath);
             }
             this.resetAvailableFlag();
         }
@@ -202,7 +202,12 @@ export class BuildController implements Disposable {
     }
 
     private async getBuildInput(credential: Credential): Promise<BuildInput> {
+        let outputFolderPath = normalizeDriveLetter(process.env.VSCODE_DOCS_BUILD_EXTENSION_OUTPUT_FOLDER || getTempOutputFolder(this._environmentController.debugMode));
+        let logPath = normalizeDriveLetter(process.env.VSCODE_DOCS_BUILD_EXTENSION_LOG_PATH || path.join(outputFolderPath, '.errors.log'));
+
         if (this._buildInput) {
+            this._buildInput.outputFolderPath = outputFolderPath;
+            this._buildInput.logPath = logPath;
             return this._buildInput;
         }
 
@@ -213,8 +218,7 @@ export class BuildController implements Disposable {
         try {
             let [localRepositoryUrl, originalRepositoryUrl] = await this.retrieveRepositoryInfo(localRepositoryPath, credential.userInfo?.userToken);
             let dryRun = this.needDryRun(activeWorkSpaceFolder.uri.fsPath);
-            let outputFolderPath = normalizeDriveLetter(process.env.VSCODE_DOCS_BUILD_EXTENSION_OUTPUT_FOLDER || getTempOutputFolder());
-            let logPath = normalizeDriveLetter(process.env.VSCODE_DOCS_BUILD_EXTENSION_LOG_PATH || path.join(outputFolderPath, '.errors.log'));
+
             this._buildInput = <BuildInput>{
                 workspaceFolderName: activeWorkSpaceFolder.name,
                 buildType: BuildType.FullBuild,

@@ -1,12 +1,12 @@
 export interface BuildInput {
-    readonly workspaceFolderName: string;
-    readonly buildType: BuildType;
-    readonly localRepositoryPath: string;
-    readonly localRepositoryUrl: string;
-    readonly originalRepositoryUrl: string;
-    readonly outputFolderPath: string;
-    readonly logPath: string;
-    readonly dryRun: boolean;
+    workspaceFolderName: string;
+    buildType: BuildType;
+    localRepositoryPath: string;
+    localRepositoryUrl: string;
+    originalRepositoryUrl: string;
+    outputFolderPath: string;
+    logPath: string;
+    dryRun: boolean;
 }
 
 export enum BuildType {

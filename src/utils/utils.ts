@@ -63,7 +63,7 @@ function parseRemoteUrl(url: string): [DocsRepoType, string, string] {
     const docsRepoType = repository.resource.startsWith('github.com') ? 'GitHub' : 'Azure DevOps';
     let match = /^.+?(?<locale>\.[a-z]{2,4}-[a-z]{2,4}(-[a-z]{2,4})?|\.loc)?$/g.exec(repository.name);
     let locale = 'en-us';
-    if(match && match.groups && match.groups.locale) {
+    if (match && match.groups && match.groups.locale) {
         locale = match.groups.locale.substring(1);
     }
     return [docsRepoType, `https://${repository.resource}/${repository.full_name}`, locale];
@@ -123,9 +123,13 @@ export async function killProcessTree(pid: number, signal?: string | number) {
     });
 }
 
-export function getTempOutputFolder() {
-    let randomFolder = Math.random().toString(36).substring(7);
-    return path.join(tempDirectory, randomFolder);
+export function getTempOutputFolder(isDebugMode: boolean = false) {
+    if (isDebugMode) {
+        return path.join(tempDirectory, "docs-validation-debug");
+    } else {
+        let randomFolder = Math.random().toString(36).substring(7);
+        return path.join(tempDirectory, randomFolder);
+    }
 }
 
 export function normalizeDriveLetter(filePath: string) {
