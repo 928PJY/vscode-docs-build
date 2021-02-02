@@ -85,7 +85,8 @@ You might encounter the following issues when using the extension.
 
 ### Clone template repository or dependencies failed
 
-When your validation fails with some error message like:
+When you see a validation error `git-clone-failed` with message: `Failure to clone the repository `https://github.com/Microsoft/templates.docs.msft#master`. This could be caused by an incorrect repository URL, please verify the URL on the Docs Portal (https://ops.microsoft.com). This could also be caused by not having the proper permission the repository, please confirm that the GitHub group/team that triggered the build has access to the repository.`  
+Or the output in the output channel with some error message like:
 
 ```bash
 fatal: unable to access 'https://github.com/Microsoft/templates.docs.msft/': The requested URL returned error: 403
@@ -99,12 +100,17 @@ Error: running 'docfx restore' failed with exit code: 1
 Please try the following solutions:
 
 1. Make sure you can access this repository https://github.com/Microsoft/templates.docs.msft on GitHub, if not, please join the `Microsoft` org by the this [website](https://repos.opensource.microsoft.com/Microsoft/), after that, try again.
+1. GitHub has recently enabled SSO on Microsoft-owned organizations. If you see the below errors in the `Docs Validation` channel (View -> Output -> Docs Validation), please follow the instructions there to visit the page to enable SSO on your token so that local validation can pass through.
+   ```bash
+   fatal: unable to access 'https://github.com/Microsoft/templates.docs.msft/': The requested URL returned error: 403
+   remote: The `microsoft' organization has enabled or enforced SAML SSO. To access
+   remote: this repository, visit https://github.com/enterprises/microsoftopensource/sso?authorization_request=AEJANEWOPPW6YTNW5TYNW2K7OBDR3A5PN5ZGOYLONF5GC5DJN5XF62LEZYAF32PCVVRXEZLEMVXHI2LBNRPWSZGODVDHWBVPMNZGKZDFNZ2GSYLML52HS4DFVNHWC5LUNBAWGY3FONZQ
+   ```
 1. Try to clone the template repository in a separated terminal by running the following command:
 
    ```bash
    $ git clone https://github.com/Microsoft/templates.docs.msft
    ```
-
 1. If you have enabled 2FA on GitHub and you run into the following errors when you clone the repository, please follow [these instructions](https://stackoverflow.com/a/34919582/8335256).
 
    ```bash
@@ -115,12 +121,7 @@ Please try the following solutions:
    fatal: Authentication failed for https://github. com/Microsoft/templates.docs.msft/'
    ```
 
-1. GitHub has recently enabled SSO on Microsoft-owned organizations. If you see the below errors, please follow the instructions there to enable SSO on your token so that local validation can pass through.
-   ```bash
-   fatal: unable to access 'https://github.com/Microsoft/templates.docs.msft/': The requested URL returned error: 403
-   remote: The `microsoft' organization has enabled or enforced SAML SSO. To access
-   remote: this repository, visit https://github.com/enterprises/microsoftopensource/sso?authorization_request=AEJANEWOPPW6YTNW5TYNW2K7OBDR3A5PN5ZGOYLONF5GC5DJN5XF62LEZYAF32PCVVRXEZLEMVXHI2LBNRPWSZGODVDHWBVPMNZGKZDFNZ2GSYLML52HS4DFVNHWC5LUNBAWGY3FONZQ
-   ```
+> If you are using the real-time validation, please reopen your window after the issue fixed, extension will retry to restore the dependency.
 
 ## License
 
