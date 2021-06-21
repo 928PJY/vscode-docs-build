@@ -101,6 +101,11 @@
         "category": "Docs"
       },
       {
+        "command": "docs.preview",
+        "title": "Start Preview",
+        "category": "Docs"
+      },
+      {
         "command": "docs.build.fullRepo",
         "title": "Validate the whole repository",
         "category": "Docs"

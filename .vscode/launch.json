@@ -20,7 +20,7 @@
             ],
             "env": {
                 // Fill in the folder which contains the docfx you want to attach, like 'E:/docfx/src/docfx/bin/Debug/net5.0'
-                "LOCAL_ATTACH_DOCFX_FOLDER_PATH": "",
+                "LOCAL_ATTACH_DOCFX_FOLDER_PATH": "E:/docfx/src/docfx/bin/Debug/net5.0",
             },
             "preLaunchTask": "npm: watch"
         },

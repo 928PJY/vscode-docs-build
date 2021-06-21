@@ -1,8 +1,11 @@
+/* eslint-disable promise/no-nesting */
+/* eslint-disable promise/catch-or-return */
+/* eslint-disable promise/always-return */
 import fs from 'fs-extra';
 // eslint-disable-next-line node/no-unpublished-import
 import getPort from 'get-port';
 import path from 'path';
-import vscode, { Disposable, Uri } from 'vscode';
+import vscode, { Disposable, Uri, ViewColumn, WebviewPanel, window } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 
 import { EnvironmentController } from '../common/environmentController';
@@ -18,6 +21,8 @@ import { BuildInput, BuildType } from './buildInput';
 import { DocfxExecutionResult } from './buildResult';
 import { DiagnosticController } from './diagnosticController';
 import { OPBuildAPIClient } from './opBuildAPIClient';
+import { DocumentContentProvider } from './previewContentProvider';
+import { PreviewParams, PreviewRequest, PreviewResponse, PreviewUpdateNotification, PreviewUpdateResponse } from './previewModels';
 import { visualizeBuildReport } from './reportGenerator';
 
 export class BuildController implements Disposable {
@@ -26,6 +31,9 @@ export class BuildController implements Disposable {
     private _buildInput: BuildInput;
     private _client: LanguageClient;
     private _disposable: Disposable;
+
+    private _panel: WebviewPanel;
+    private _previewProvider: DocumentContentProvider;
 
     constructor(
         private _repositoryRoot: string,
@@ -37,6 +45,8 @@ export class BuildController implements Disposable {
         private _credentialController: CredentialController
     ) {
         this._instanceAvailable = true;
+
+        this._previewProvider = new DocumentContentProvider();
     }
 
     dispose(): void {
@@ -118,6 +128,55 @@ export class BuildController implements Disposable {
         } catch (err) {
             this._eventStream.post(new StartLanguageServerCompleted(false, err));
             return;
+        }
+    }
+
+    public startPreview(): void {
+        if (!this._client) {
+            return;
+        }
+
+        this._client.onReady().then(async () => {
+            const activeTextEditor = vscode.window.activeTextEditor;
+            if (activeTextEditor.document.uri.scheme !== "file") {
+                vscode.window.showErrorMessage("Please make sure the target file editor are focused.");
+                return;
+            }
+            this._client
+                .sendRequest(PreviewRequest.type, <PreviewParams>{
+                    uri: activeTextEditor.document.uri.toString(),
+                    text: activeTextEditor.document.getText()
+                })
+                .then(async (response: PreviewResponse) => {
+                    // console.log(`Received response ${response.content}`);
+
+                    this._panel = window.createWebviewPanel(
+                        DocumentContentProvider.scheme,
+                        'Search Results Preview',
+                        { preserveFocus: true, viewColumn: ViewColumn.Two },
+                        { enableScripts: true }
+                    );
+                    this._panel.onDidDispose(() => {
+                        this._panel = undefined;
+                    });
+
+                    this._previewProvider.header = response.header;
+                    this._previewProvider.content = response.content;
+                    this.updatePreviewPanel();
+                });
+
+            this._client.onNotification(PreviewUpdateNotification.type, async (res: PreviewUpdateResponse) => {
+                // console.log(`Received preview update: ${res.content}`);
+                this._previewProvider.header = res.header;
+                this._previewProvider.content = res.content;
+                this.updatePreviewPanel();
+            });
+        });
+    }
+
+    private async updatePreviewPanel() {
+        if (this._panel) {
+            this._panel.webview.html = await this._previewProvider.provideTextDocumentContent();
         }
     }
 

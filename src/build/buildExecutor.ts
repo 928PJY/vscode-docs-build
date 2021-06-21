@@ -244,7 +244,7 @@ export class BuildExecutor {
     ): string {
         let cmdWithParameters = `${this._binary} ${command} "${input.localRepositoryPath}"`;
         if (command === 'serve') {
-            cmdWithParameters += ` --language-server --no-cache --address "localhost" --port ${input.port}`;
+            cmdWithParameters += ` --language-server --no-cache --address "localhost" --port ${input.port} --output-type "pagejson"`;
         } else {
             cmdWithParameters += ` --log "${input.logPath}"`;
         }

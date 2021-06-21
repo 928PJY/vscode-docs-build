@@ -144,6 +144,9 @@ async function _activate(context: vscode.ExtensionContext, repositoryRoot: strin
         vscode.commands.registerCommand('learnMore', (diagnosticErrorCode: string, documentUrl: Uri) => {
             CodeActionProvider.learnMoreAboutCode(eventStream, getCorrelationId(), diagnosticErrorCode, documentUrl);
         }),
+        vscode.commands.registerCommand('docs.preview', () => {
+            buildController.startPreview();
+        }),
         vscode.commands.registerCommand('docs.validationQuickPick', () => {
             if (checkIfUserTypeSelected(environmentController, eventStream)) {
                 createQuickPickMenu(getCorrelationId(), eventStream, credentialController, buildController, environmentController);
